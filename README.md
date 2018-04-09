@@ -10,11 +10,12 @@ SpiderMan is a micro multi-threading crawler framework. The basic structure of i
      FetcherThread     ParserThread      SaverThread     FilterThread
     e.g. 20 threads   e.g. 5 threads    e.g. 1 thread    e.g. 1 thread
            |                |                 |                |
-      f_task_queue     p_task_queue      s_task_queue          |
            |                |                 |                |
-           |                |                 |                |
-           |                |                 |                |
+    (spawns worker)  (spawns worker)   (spawns worker)  (spawns worker)
         Fetcher           Parser            Saver            Filter
+           |                |                 |                |
+           |                |                 |                |
+      f_task_queue     p_task_queue      s_task_queue          X
 #########################################################################
 ```
 
@@ -52,7 +53,7 @@ if __name__ == "__main__":
 
 You can inherit the 3 workers (class `Fetcher`/`Parser`/`Saver`) and override their corresponding methods (`fetch()`/`parse()`/`save()`) to provide a customized crawler and get the data you want.
 
-for example:
+For example (you might need to override other worker's method to make them compatable with each other):
 
 ```python
 class MyFetcher(Fetcher):
