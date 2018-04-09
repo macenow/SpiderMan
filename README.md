@@ -27,6 +27,69 @@ Once the system starts, the instance of ThreadPool will also initiate three queu
 
 A `FetcherThread` will pick a task from `f_task_queue`, fetch the html content and send content (e.g., page url and page html) to `p_task_queue`.
 
-A `ParserThread` will pick a task from `p_task_queue`, parse the html content for acquiring needed data or more urls, and send content (e.g. data, page header, more urls) to `f_task_queue` for further fetching process, or to `s_task_queue` if some conditions matched (e.g., max depth reached)
+A `ParserThread` will pick a task from `p_task_queue`, parse the html content for acquiring needed data or more urls, and send content (e.g. data, page header, more urls) to `f_task_queue` for further fetching process, or to `s_task_queue` if some conditions matched (e.g., max depth reached). Every time when a task is going to be added to `f_task_queue`, `FilterThread` (if the instance is not None) will always check for redundancy
 
-A `SaverThread` will pick a task from `s_task_queue`, save the data or content to defined method, e.g., a database or to a Json file. Before saving the data, `SaverThread` will also turn to `FilterThread` (if the instance is not None) for eliminating redundancy.
+A `SaverThread` will pick a task from `s_task_queue`, save the data or content to defined method, e.g., a database or to a Json file. Before saving the data
+
+#### Make a quick run
+
+```python
+from spider_man.workers import Fetcher, Parser, Saver, Filter
+from spider_man.thread_pool import ThreadPool
+
+if __name__ == "__main__":
+    url = "https://www.jetbrains.com/help/pycharm/meet-pycharm.html"
+    fetcher = Fetcher()
+    parser = Parser(max_deep=2)
+    saver = Saver(pipe='test_result')  # save results to file "test_result"
+    filter = Filter(bloom_capacity=1000)
+
+    spider = ThreadPool(fetcher, parser, saver, filter, fetcher_num=10)
+    spider.run(url, None, priority=0, deep=0)
+```
+
+#### Customization
+
+You should inherit 3 workers (class `Fetcher`/`Parser`/`Saver`) and override their corresponding methods (`fetch()`/`parse()`/`save()`) to provide a customized crawler.
+
+for example:
+
+```python
+class MyFetcher(Fetcher):
+    def __init__(self, company: str, jison: Jison = None, db=None,
+                 max_repeat: int = 3, sleep_time: int = 0):
+        super().__init__(max_repeat, sleep_time)
+        self.jison = jison
+        self.company = company.lower()
+        self.db = db
+
+    def change_db(self, db):
+        self.db = db
+
+    def fetch(self, url: str, data: dict, session):
+        """
+        entry point task: (0, field_page_url, data={'type': 'field_page', 'save': False}, 0, 0)
+        """
+        # if save is 'True', skip operation and return data directly
+        if data.get('save'):
+            return 1, data, (200, '', '')
+
+        # get the page of whole list of groups, or
+        # get the page of target group, send to task_queue_p
+        if data.get('type') == 'field_page' or data.get('type') == 'group_page':
+            response = session.get(url, timeout=(3.05, 10))
+            return 1, data, (response.status_code, response.url, response.text)
+
+        # if the type is Multi or Choice, then get the page of choices
+        elif data.get('type') == 'var_page':
+            var_type = data.get('var_type')
+            if var_type == 'Multi' or var_type == 'Choice':
+                session.get(url)
+                response = session.get(f'https://{self.company}.xplan.iress.com.au/ufield/list_options', timeout=(3.05, 10))
+                return 1, data, (response.status_code, response.url, response.text)
+            else:
+                return 1, data, (200, '', '')
+
+        else:
+            raise Exception(f'Invalid data type: type={data.get("type")}')
+```
