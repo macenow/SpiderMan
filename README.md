@@ -18,7 +18,7 @@ SpiderMan is a micro multi-threading crawler framework. The basic structure of i
 #########################################################################
 ```
 
-Thread ThreadPool class can spawn many threads, each thread (class `FetcherThread`/`ParserThread`/`SaverThread`/`FilterThread`) will has one corresponding worker (class `Fetcher`/`Parser`/`Saver`/`Filter`) for dealing with tasks.
+The ThreadPool class can spawn many threads, each thread (class `FetcherThread`/`ParserThread`/`SaverThread`/`FilterThread`) will has one corresponding worker (class `Fetcher`/`Parser`/`Saver`/`Filter`) for dealing with tasks.
 
 Once the system starts, the instance of ThreadPool will also initiate three queues:
 - `f_task_queue` for `FetcherThread`
