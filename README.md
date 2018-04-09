@@ -67,6 +67,9 @@ class MyFetcher(Fetcher):
         self.db = db
 
     def fetch(self, url: str, data: dict, session):
+        """
+        Overriding Fetcher's fetch() method
+        """
         if data.get('save'):
             return 1, data, (200, '', '')
 
