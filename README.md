@@ -50,42 +50,35 @@ if __name__ == "__main__":
 
 #### Customization
 
-You should inherit 3 workers (class `Fetcher`/`Parser`/`Saver`) and override their corresponding methods (`fetch()`/`parse()`/`save()`) to provide a customized crawler.
+You can inherit the 3 workers (class `Fetcher`/`Parser`/`Saver`) and override their corresponding methods (`fetch()`/`parse()`/`save()`) to provide a customized crawler and get the data you want.
 
 for example:
 
 ```python
 class MyFetcher(Fetcher):
-    def __init__(self, company: str, jison: Jison = None, db=None,
+    def __init__(self, url: str, jison: Jison = None, db=None,
                  max_repeat: int = 3, sleep_time: int = 0):
         super().__init__(max_repeat, sleep_time)
         self.jison = jison
-        self.company = company.lower()
+        self.url = url.lower()
         self.db = db
 
     def change_db(self, db):
         self.db = db
 
     def fetch(self, url: str, data: dict, session):
-        """
-        entry point task: (0, field_page_url, data={'type': 'field_page', 'save': False}, 0, 0)
-        """
-        # if save is 'True', skip operation and return data directly
         if data.get('save'):
             return 1, data, (200, '', '')
 
-        # get the page of whole list of groups, or
-        # get the page of target group, send to task_queue_p
         if data.get('type') == 'field_page' or data.get('type') == 'group_page':
             response = session.get(url, timeout=(3.05, 10))
             return 1, data, (response.status_code, response.url, response.text)
 
-        # if the type is Multi or Choice, then get the page of choices
         elif data.get('type') == 'var_page':
             var_type = data.get('var_type')
             if var_type == 'Multi' or var_type == 'Choice':
                 session.get(url)
-                response = session.get(f'https://{self.company}.xplan.iress.com.au/ufield/list_options', timeout=(3.05, 10))
+                response = session.get(f'https://{self.url}.', timeout=(3.05, 10))
                 return 1, data, (response.status_code, response.url, response.text)
             else:
                 return 1, data, (200, '', '')
