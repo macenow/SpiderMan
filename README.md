@@ -31,7 +31,7 @@ A `ParserThread` will pick a task from `p_task_queue`, parse the html content fo
 
 A `SaverThread` will pick a task from `s_task_queue`, save the data or content to defined method, e.g., a database or to a Json file. Before saving the data
 
-#### Make a quick run
+### Make a quick run
 
 ```python
 from spider_man.workers import Fetcher, Parser, Saver, Filter
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     spider.run(url, None, priority=0, deep=0)
 ```
 
-#### Customization
+### Customization
 
 You can inherit the 3 workers (class `Fetcher`/`Parser`/`Saver`) and override their corresponding methods (`fetch()`/`parse()`/`save()`) to provide a customized crawler and get the data you want.
 
